@@ -5,17 +5,17 @@
         <h3>账户信息</h3>
         <!-- <el-button style="float: right; padding: 3px 0" type="text">清空</el-button> -->
       </div>
-      <!-- <el-form v-model="accountInfo" label-width="120px">
-        <el-form-item label="账户名称">
-          <h4>{{ accountInfo.name }}</h4>
+      <el-form v-model="accountInfo" label-width="120px">
+        <el-form-item label="资产缩写">
+          <h4>{{ accountInfo.symbol }}</h4>
         </el-form-item>
-        <el-form-item label="账户id">
+        <el-form-item label="资产ID">
           <h4>{{ accountInfo.id }}</h4>
         </el-form-item>
-        <el-form-item label="等级">
-          <h4>{{ accountInfo.level }}</h4>
+        <el-form-item label="最高交易费">
+          <h4>{{ accountInfo.options.max_market_fee }}</h4>
         </el-form-item>
-      </el-form> -->
+      </el-form>
     </el-card>
   </div>
 </template>
@@ -27,7 +27,7 @@ import { graphene } from '~/components/graphene'
 export default {
   data () {
     return {
-      accountInfo: {}
+      assetInfo: {}
     }
   },
   components: {
@@ -36,7 +36,10 @@ export default {
   methods: {
   },
   async mounted () {
-    this.accountInfo = await graphene.queryAccount(this.$route.params.name)
+    console.log('asset:', this.$route.params.name)
+    const result = await graphene.queryAsset(this.$route.params.name)
+    console.log('asset2:', result)
+    this.assetInfo = result[0]
   }
 }
 </script>

@@ -9,7 +9,7 @@
         <el-form-item label="账户名称">
           <h4>{{ accountInfo.name }}</h4>
         </el-form-item>
-        <el-form-item label="账户id">
+        <el-form-item label="账户ID">
           <h4>{{ accountInfo.id }}</h4>
         </el-form-item>
         <el-form-item label="等级">

@@ -148,6 +148,11 @@ class Graphene {
     const result = await Apis.instance().db_api().exec('get_block', [blockNum])
     return result
   }
+
+  async queryAsset (symbol) {
+    const result = await Apis.instance().db_api().exec('lookup_asset_symbols', [[symbol]])
+    return result
+  }
 }
 
 // module.exports = Graphene

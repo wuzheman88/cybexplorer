@@ -5,7 +5,7 @@
         <h3>账户信息</h3>
         <!-- <el-button style="float: right; padding: 3px 0" type="text">清空</el-button> -->
       </div>
-      <!-- <el-form v-model="accountInfo" label-width="120px">
+      <!-- <el-form v-model="blockInfo" label-width="120px">
         <el-form-item label="账户名称">
           <h4>{{ accountInfo.name }}</h4>
         </el-form-item>
@@ -27,7 +27,7 @@ import { graphene } from '~/components/graphene'
 export default {
   data () {
     return {
-      accountInfo: {}
+      blockInfo: {}
     }
   },
   components: {
@@ -36,7 +36,7 @@ export default {
   methods: {
   },
   async mounted () {
-    this.accountInfo = await graphene.queryAccount(this.$route.params.name)
+    this.blockInfo = await graphene.queryBlock(this.$route.params.name)
   }
 }
 </script>

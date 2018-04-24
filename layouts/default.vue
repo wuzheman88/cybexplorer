@@ -77,7 +77,8 @@ html {
 }
 
 .suggestion-class {
-  font-size: 32em;
+  /* font-size: 32em; */
+  color: red;
 }
 </style>
 
@@ -92,14 +93,22 @@ export default {
   },
   methods: {
     onSearch () {
-      this.$router.push('/initialize')
+      this.$router.push('/')
     },
     querySearchAsync: function (queryString, cb) {
-      const string = queryString
-      const callback = (x) => {
-        cb(x)
+      if (queryString.trim().length > 0) {
+        const string = queryString
+        const callback = (x) => {
+          cb(x)
+        }
+        graphene.query({string, callback})
+      } else {
+        const json = [{
+          value: '可输入xxxxxx',
+          desc: '可输入xxxxxx'
+        }]
+        cb(json)
       }
-      graphene.query({string, callback})
     },
     handleSelect (item) {
       this.content = item.value
