@@ -2,39 +2,16 @@ const { Nuxt, Builder } = require('nuxt')
 const express = require('express')
 const logger = require('morgan')
 var http = require('http')
-const io = require('socket.io-client')
+// const io = require('socket.io-client')
+// const Graphene = require('../components/graphene.js')
 const app = express()
 
 const port = process.env.PORT || 3010
+
+// const FLUSH_INTERVAL = 100
+
 const server = http.createServer(app)
 app.listen = function (app) {
-  const socket = io.connect("wss://bitshares.dacplay.org/ws", {reconnect: true})
-  console.log('create socket!!!', socket)
-  // const ws = new WebSocket("wss://bitshares.dacplay.org/ws")
-  // ws.onopen = () => {
-  //   console.log('ws!!! open')  
-  // }
-  // ws.onerror = (error) => {
-  //   console.log('ws!!!', error)  
-  // }
-  // ws.onmessage = (message) => {
-  //   console.log('ws!!!', message)
-  // }
-  // ws.onclose = () => {
-  //   console.log('ws!!! close')
-  // }
-  socket.on('connect', () => {
-    console.log('socket connected!!')
-  })
-  socket.on('open', () => {
-    console.log('socket opened!!')
-  })
-  socket.on('error', () => {
-    console.log('socket error!!')
-  })
-  socket.on('message', () => {
-    console.log('socket message!!')
-  })
   return server.listen.apply(server, arguments)
 }
 
@@ -52,3 +29,9 @@ if (config.dev) {
 
 app.use(nuxt.render)
 app.listen(port, () => { console.log(`Server is listening on http://localhost:${port}`) })
+
+// const graphene = new Graphene()
+// const flushLoop = setInterval(function () {
+//   const msgList = graphene.flush()
+//   console.log('latest transaction:', msgList)
+// }, FLUSH_INTERVAL)

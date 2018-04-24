@@ -1,7 +1,29 @@
 <template>
-  <div>
-    <nuxt/>
-  </div>
+  <el-container>
+    <el-header height="110px" style="text-align:center;">
+      <h1>Cybexplorer</h1>
+      <p>A Cybex explorer</p>
+      <br/>
+      <el-row>
+        <el-col :span="10" :offset="7">
+        <el-autocomplete v-model="content" id="global_search_input" value-key="desc" :debounce="300" popper-class="suggestion_class" placeholder="请输入账户名、区块号、交易hash" clearable
+          :fetch-suggestions="querySearchAsync" 
+          @select="handleSelect">
+          <el-button slot="append" icon="el-icon-search" @click="onSearch"></el-button>
+        </el-autocomplete>
+        </el-col>
+      </el-row>
+    </el-header>
+    <el-container class="main-container">
+      <!-- 导航菜单 -->
+      <el-aside width="200px">
+      </el-aside>
+      <!-- 内容部分 -->
+      <el-main>
+        <nuxt/>
+      </el-main>
+    </el-container>
+  </el-container>
 </template>
 
 <style>
@@ -49,4 +71,45 @@ html {
   color: #fff;
   background-color: #35495e;
 }
+
+#global_search_input {
+  width: 100%;
+}
+
+.suggestion-class {
+  font-size: 32em;
+}
 </style>
+
+<script>
+import { graphene } from '~/components/graphene'
+
+export default {
+  data () {
+    return {
+      content: ''
+    }
+  },
+  methods: {
+    onSearch () {
+      this.$router.push('/initialize')
+    },
+    querySearchAsync: function (queryString, cb) {
+      const string = queryString
+      const callback = (x) => {
+        cb(x)
+      }
+      graphene.query({string, callback})
+    },
+    handleSelect (item) {
+      this.content = item.value
+      this.$router.push({
+        path: `/${item.type}/${item.value}`,
+        params: {
+          name: item.value
+        }
+      })
+    }
+  }
+}
+</script>

@@ -1,8 +1,22 @@
 <template>
-  <div class="container">
-    <div v-for="(msg, index) in actionList" class="account_action" :key="index">
-      {{`${msg.name} wants ${msg.base.amount} ${msg.base.symbol} For ${msg.base.amount} ${msg.quote.symbol}`}}
-    </div>
+  <div class="container">    
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <h3>账户信息</h3>
+        <!-- <el-button style="float: right; padding: 3px 0" type="text">清空</el-button> -->
+      </div>
+      <!-- <el-form v-model="accountInfo" label-width="120px">
+        <el-form-item label="账户名称">
+          <h4>{{ accountInfo.name }}</h4>
+        </el-form-item>
+        <el-form-item label="账户id">
+          <h4>{{ accountInfo.id }}</h4>
+        </el-form-item>
+        <el-form-item label="等级">
+          <h4>{{ accountInfo.level }}</h4>
+        </el-form-item>
+      </el-form> -->
+    </el-card>
   </div>
 </template>
 
@@ -13,20 +27,16 @@ import { graphene } from '~/components/graphene'
 export default {
   data () {
     return {
-      actionList: []
+      accountInfo: {}
     }
   },
   components: {
     AppLogo
   },
   methods: {
-    onNewAction (newMsg) {
-      this.actionList.unshift(newMsg)
-    }
   },
-  mounted () {
-    const callback = this.onNewAction
-    graphene.start({callback})
+  async mounted () {
+    this.accountInfo = await graphene.queryAccount(this.$route.params.name)
   }
 }
 </script>
@@ -38,7 +48,7 @@ export default {
   justify-content: center;
   align-items: center;
   text-align: center;
-  /* overflow: scroll; */
+  overflow: scroll;
 }
 
 .title {
@@ -64,7 +74,6 @@ export default {
 
 .account_action {
   font-size: 1em;
-  width: 500px;
-  word-wrap:break-word;
+  width: 100%;
 }
 </style>

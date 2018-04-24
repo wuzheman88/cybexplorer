@@ -1,4 +1,5 @@
 module.exports = {
+  dev: (process.env.NODE_ENV !== 'production'),
   /*
   ** Headers of the page
   */
@@ -34,5 +35,9 @@ module.exports = {
         })
       }
     }
-  }
+  },
+  plugins: [
+    // '~plugins/i18n',
+    '~plugins/element-ui'
+  ]
 }
