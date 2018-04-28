@@ -2,13 +2,9 @@ const { Nuxt, Builder } = require('nuxt')
 const express = require('express')
 const logger = require('morgan')
 var http = require('http')
-// const io = require('socket.io-client')
-// const Graphene = require('../components/graphene.js')
 const app = express()
 
 const port = process.env.PORT || 3010
-
-// const FLUSH_INTERVAL = 100
 
 const server = http.createServer(app)
 app.listen = function (app) {
@@ -30,8 +26,18 @@ if (config.dev) {
 app.use(nuxt.render)
 app.listen(port, () => { console.log(`Server is listening on http://localhost:${port}`) })
 
-// const graphene = new Graphene()
-// const flushLoop = setInterval(function () {
-//   const msgList = graphene.flush()
-//   console.log('latest transaction:', msgList)
-// }, FLUSH_INTERVAL)
+// const socketio = require('socket.io')
+// let io = socketio(server)
+
+// let messages = []
+// io.sockets.on('connection', (socket) => {
+//   socket.on('last-messages', function (fn) {
+//     fn(messages.slice(-50))
+//   })
+//   socket.on('send-message', function (message) {
+//     messages.push(message)
+//     socket.broadcast.emit('new-message', message)
+//   })
+
+//   socket.broadcast.emit('new-message', 'Hello new world!')
+// })

@@ -1,12 +1,17 @@
-// const WebSocket = require('ws')
 import {Apis} from 'cybexjs-ws'
+// const WebSocket = require('ws')
+const config = require('../nuxt.config.js')
 
 const NODE_LIST = [
-  'wss://singapore-01.cybex.io/',
-  'wss://bitshares.dacplay.org/ws'
+  'wss://shanghai.51nebula.com/',
+  'wss://beijing.51nebula.com/',
+  'wss://hongkong.cybex.io/',
+  'wss://tokyo-01.cybex.io/',
+  'wss://korea-01.cybex.io/',
+  'wss://singapore-01.cybex.io/'
 ]
 
-let sCallback = function () {}
+// let sCallback = function () {}
 
 const SUGGEST_QUERY_LIST = {
   account: {
@@ -27,21 +32,116 @@ const SUGGEST_QUERY_LIST = {
   }
 }
 
+const DETAIL_QUERY_LIST = {
+  account: {
+    action: 'get_account_by_name',
+    paramCb: s => { return [s] },
+    desc: '用户'
+  },
+  block: {
+    action: 'get_block',
+    paramCb: s => { return [s] },
+    desc: '区块',
+    isForbid: s => { return isNaN(s) }
+  },
+  asset: {
+    action: 'lookup_asset_symbols',
+    paramCb: s => { return [[s]] },
+    desc: '资产'
+  }
+}
+
+let self
+
 class Graphene {
   constructor () {
     this.callbacks = {}
+    this.unhandledQueue = []
+    this.currentNode = ''
+    this.sCallback = null
+    self = this
   }
 
-  start ({nodeid, callback}) {
-    sCallback = callback
-    Apis.instance(NODE_LIST[nodeid || 0], true).init_promise.then((res) => {
-      Apis.instance().db_api().exec('set_subscribe_callback', [this.updateListener, true])
+  on (event, listener) {
+    this['on' + event] = listener
+  }
+
+  start () {
+    this.selectNode(this.doConnect)
+  }
+
+  doConnect (cs) {
+    Apis.setRpcConnectionStatusCallback(self.onConnectionStatusChanged)
+    Apis.setAutoReconnect(true)
+    Apis.instance(cs, true).init_promise.then(async (res) => {
+      Apis.instance().db_api().exec('set_subscribe_callback', [self.updateListener, true])
       // Apis.instance().db_api().exec('set_pending_transaction_callback', [this.transactionListener, true])
+      while (self.unhandledQueue.length > 0) {
+        const unhandled = self.unhandledQueue.shift()
+        if (self.onconnected) {
+          self.onconnected()
+        }
+        await self.exec(unhandled.action, unhandled.param, unhandled.callback)
+      }
     })
   }
 
-  registerListener (api, callback) {
-    this.callbacks[api] = callback
+  onConnectionStatusChanged (status) {
+    if (config.dev) {
+      console.log('TCP链路状态变化：', status)
+    }
+    if (status === 'closed') {
+      Apis.close().then(self.start)
+    } else if (status === 'open') {
+      self.currentNode = this.ws.url
+      console.log('成功连接节点：', self.currentNode)
+    }
+  }
+
+  selectNode (callback) {
+    let minDelay = Number.MAX_SAFE_INTEGER
+    let minCs = null
+    let idx = 0
+    const WSocket = WebSocket
+    let timeout = false
+    setTimeout(function () {
+      if (minCs) {
+        idx = NODE_LIST.length
+        timeout = true
+        if (config.dev) {
+          console.log('选取延迟最低的节点：', minCs, minDelay)
+        }
+        callback(minCs)
+      }
+    }, 500)
+    NODE_LIST.forEach((cs) => {
+      // console.log('websocks', cs)
+      const testSock = new WSocket(cs)
+      const preTime = Date.now()
+      testSock.onopen = () => {
+        const delay = Date.now() - preTime
+        if (config.dev) {
+          console.log('延迟：', cs, delay)
+        }
+        if (!timeout) {
+          if (delay < minDelay) {
+            minDelay = delay
+            minCs = cs
+          }
+          if (++idx === NODE_LIST.length) {
+            if (config.dev) {
+              console.log('选取延迟最低的节点：', minCs, minDelay)
+            }
+            callback(minCs)
+          }
+        }
+      }
+    })
+  }
+
+  registerListener (callback) {
+    // this.callbacks[api] = callback
+    this.sCallback = callback
   }
 
   unregisterListener (api) {
@@ -58,31 +158,15 @@ class Graphene {
     const transactions = obj[0]
     transactions.forEach(async transaction => {
       if (transaction.seller) {
-        console.log(transaction)
-        const users = await Apis.instance().db_api().exec('get_accounts', [[transaction.seller]])
-        if (users && users.length > 0) {
-          let trxObj = {
-            name: users[0].name
-          }
-          const pricePairs = ['base', 'quote']
-          for (const idx in pricePairs) {
-            const assetName = pricePairs[idx]
-            const assetObj = transaction.sell_price[assetName]
-            const assets = await Apis.instance().db_api().exec('get_assets', [[assetObj.asset_id]])
-            const asset = assets[0]
-            trxObj[assetName] = {
-              symbol: asset.symbol,
-              precision: asset.precision,
-              amount: assetObj.amount,
-              description: asset.options.description,
-              max_supply: asset.options.max_supply,
-              max_market_fee: asset.options.max_market_fee,
-              market_fee_percent: asset.options.market_fee_percent
-            }
-          }
-          // console.log('console.log(trxObj):;', transaction)
-          // const trx = await Apis.instance().db_api().exec( 'get_objects', [[transaction.id]])
-          sCallback(trxObj)
+        // console.log(transaction, self.sCallback)
+        let trxObj = {
+          seller: transaction.seller,
+          timestamp: transaction.expiration,
+          base: transaction.sell_price.base,
+          quote: transaction.sell_price.quote
+        }
+        if (self.sCallback) {
+          self.sCallback(trxObj)
         }
       }
     })
@@ -90,6 +174,21 @@ class Graphene {
 
   transactionListener (object) {
     // console.log('set_pending_transaction_callback:\n', object)
+  }
+
+  doQuery ({type, string, callback}) {
+    const method = DETAIL_QUERY_LIST[type]
+    const action = method.action
+    const param = method.paramCb(string)
+    if (self.currentNode) {
+      self.exec(action, param, callback)
+    } else {
+      self.unhandledQueue.push({
+        param: param,
+        action: action,
+        callback: callback
+      })
+    }
   }
 
   async query ({string, callback}) {
@@ -100,7 +199,6 @@ class Graphene {
       const param = method.paramCb(string)
       try {
         const resp = await Apis.instance().db_api().exec(action, param)
-        console.log('suggest:', string, type, param, resp)
         if (type === 'account') {
           const respData = resp || []
           respData.forEach(arr => {
@@ -128,7 +226,7 @@ class Graphene {
           })
         }
       } catch (e) {
-        console.log('some error:', e)
+        // console.log('some error:', e)
       }
     }
     callback(queryResults)
@@ -136,22 +234,76 @@ class Graphene {
 
   async queryAccount (name) {
     const result = await Apis.instance().db_api().exec('get_account_by_name', [name])
+    if (config.dev) {
+      console.log('queryAccount', result)
+    }
     return result
   }
 
   async queryWitness (id) {
     const result = await Apis.instance().db_api().exec('get_objects', [id])
+    if (config.dev) {
+      console.log('queryWitness', result)
+    }
     return result
   }
 
-  async queryBlock (blockNum) {
-    const result = await Apis.instance().db_api().exec('get_block', [blockNum])
-    return result
+  async exec (action, param, callback) {
+    const result = await Apis.instance().db_api().exec(action, param)
+    if (config.dev) {
+      console.log('query', action, result)
+    }
+    callback(result)
+  }
+
+  async queryBlock (blockNum, callback) {
+    if (self.currentNode) {
+      self.exec('get_block', [blockNum], callback)
+    } else {
+      self.unhandledQueue.push({
+        param: [blockNum],
+        action: 'get_block',
+        callback: callback
+      })
+    }
   }
 
   async queryAsset (symbol) {
     const result = await Apis.instance().db_api().exec('lookup_asset_symbols', [[symbol]])
+    if (config.dev) {
+      console.log('queryAsset', result)
+    }
     return result
+  }
+
+  async queryObject (objectId) {
+    let result
+    try {
+      result = await Apis.instance().db_api().exec('get_objects', [[objectId]])
+    } catch (e) {
+      console.log('queryObject', e, objectId)
+    }
+    if (config.dev) {
+      console.log('queryObject', result)
+    }
+    return result
+  }
+
+  async queryMarketHistory (base, quote, start, end, callback) {
+    const startISO = start.toISOString().slice(0, -5)
+    const endISO = end.toISOString().slice(0, -5)
+    const result = await Apis.instance().history_api().exec( "get_market_history", 
+      [base, quote, 3600, startISO, endISO])
+    const ticker = Apis.instance().db_api().exec("get_ticker", [base, quote])
+    const subscribeCallback = function (x, y, z) {
+      console.log('subscribeCallback', x, y, z)
+      callback()
+    }
+    Apis.instance().db_api().exec("subscribe_to_market", [subscribeCallback, base, quote])
+    return {
+      ticker: ticker,
+      prices: result
+    }
   }
 }
 

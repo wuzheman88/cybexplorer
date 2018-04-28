@@ -2,27 +2,44 @@
   <div class="container">    
     <el-card class="box-card">
       <div slot="header" class="clearfix">
-        <h3>账户信息</h3>
-        <!-- <el-button style="float: right; padding: 3px 0" type="text">清空</el-button> -->
+        <h3>资产信息</h3>
       </div>
-      <el-form v-model="accountInfo" label-width="120px">
+      <el-form v-if="assetInfo" label-width="120px">
         <el-form-item label="资产缩写">
-          <h4>{{ accountInfo.symbol }}</h4>
+          <h4>{{ assetInfo.symbol }}</h4>
         </el-form-item>
         <el-form-item label="资产ID">
-          <h4>{{ accountInfo.id }}</h4>
+          <h4>{{ assetInfo.id }}</h4>
         </el-form-item>
-        <el-form-item label="最高交易费">
-          <h4>{{ accountInfo.options.max_market_fee }}</h4>
+        <el-form-item v-if="assetInfo.options" label="最高交易费">
+          <h4>{{ assetInfo.options.max_market_fee }}</h4>
+        </el-form-item>
+        <el-form-item v-if="assetInfo.issuer" label="发行人">
+          <object-link :objectid="assetInfo.issuer"></object-link>
+        </el-form-item>
+        <el-form-item label="精度">
+          <h4>{{ assetInfo.precision }}</h4>
+        </el-form-item>
+        <el-form-item v-if="assetInfo.dynamic_asset_data_id" label="当前供给">
+          <object-link :objectid="assetInfo.dynamic_asset_data_id"></object-link>
+        </el-form-item>
+        <el-form-item v-if="assetInfo.options" label="最大供给">
+          <h4>{{ assetInfo.options.max_supply }}</h4>
         </el-form-item>
       </el-form>
+      <asset-chart v-if="assetInfo.id" :data="{
+          base: assetInfo.id,
+          quote: '1.3.0'
+        }"></asset-chart>
     </el-card>
   </div>
 </template>
 
 <script>
-import AppLogo from '~/components/AppLogo.vue'
+import ObjectLink from '~/components/ObjectLink.vue'
+import AssetChart from '~/components/AssetChart.vue'
 import { graphene } from '~/components/graphene'
+import echarts from 'echarts'
 
 export default {
   data () {
@@ -31,28 +48,25 @@ export default {
     }
   },
   components: {
-    AppLogo
+    ObjectLink,
+    AssetChart
   },
   methods: {
+    updateAssetInfo (res) {
+      this.assetInfo = res[0]
+    }
   },
   async mounted () {
-    console.log('asset:', this.$route.params.name)
-    const result = await graphene.queryAsset(this.$route.params.name)
-    console.log('asset2:', result)
-    this.assetInfo = result[0]
+    graphene.doQuery({
+      type: 'asset',
+      string: this.$route.params.name,
+      callback: this.updateAssetInfo
+    })
   }
 }
 </script>
 
 <style>
-.container {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  overflow: scroll;
-}
 
 .title {
   font-family: "Quicksand", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* 1 */
@@ -78,5 +92,10 @@ export default {
 .account_action {
   font-size: 1em;
   width: 100%;
+}
+
+.box-card {
+  width: 80%;
+  min-height: 100%;
 }
 </style>

@@ -1,0 +1,43 @@
+/* Font
+-------------------------- */
+@font-family: "Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft Yahei","微软雅黑","Heiti SC","WenQuanYi Micro Hei",Arial,sans-serif;
+@code-family: Consolas,Menlo,Courier,monospace;
+@font-size-base: 14px;
+@font-size-small: 12px;
+
+/* Media queries breakpoints
+-------------------------- */
+// Extra small screen / phone
+@screen-xs: 480px;
+@screen-xs-1: 479px;
+// Small screen / tablet
+@screen-sm: 768px;
+@screen-sm-1: 767px;
+// Medium screen / desktop small
+@screen-md: 992px;
+@screen-md-1: 991px;
+// Medium screen / desktop large
+@screen-lg: 1200px;
+@screen-lg-1: 1199px;
+// Large screen / wide desktop
+@screen-xl: 1680px;
+@screen-xl-1: 1679px;
+
+/* Shadow
+-------------------------- */
+@shadow-color: rgba(0, 0, 0, 0.75);
+@box-shadow-base: 3px 3px 2px @shadow-color;
+@box-shadow-dark: 4px 4px 3px @shadow-color;
+@box-shadow-left: -3px 3px 2px @shadow-color;
+@box-shadow-top: 0px -3px 2px @shadow-color;
+@box-shadow-bottom: 0px 3px 2px @shadow-color;
+@text-shadow-base: 1px 2px 2px @shadow-color;
+
+/* Transition
+-------------------------- */
+@all-transition: all .2s cubic-bezier(.645,.045,.355,1);
+@fade-transition: opacity 300ms cubic-bezier(0.23, 1, 0.32, 1);
+@fade-linear-transition: opacity 200ms linear;
+@md-fade-transition: transform 300ms cubic-bezier(0.23, 1, 0.32, 1) 100ms, opacity 300ms cubic-bezier(0.23, 1, 0.32, 1) 100ms;
+@border-transition: border-color .2s cubic-bezier(.645,.045,.355,1);
+@color-transition: color .2s cubic-bezier(.645,.045,.355,1);

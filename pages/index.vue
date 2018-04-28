@@ -1,13 +1,21 @@
 <template>
   <div class="container">
-    <div v-for="(msg, index) in actionList" class="account_action" :key="index">
-      {{`${msg.name} wants ${msg.base.amount} ${msg.base.symbol} For ${msg.base.amount} ${msg.quote.symbol}`}}
+    <div class="msgContainer">
+      <h5>最新交易</h5>
+      <br/>
+      <ul>
+        <li v-for="(msg, index) in actionList" class="account_action" :key="index">
+          <object-link :objectid="msg.seller"></object-link>{{`wants ${msg.quote.amount}`}} <object-link :objectid="msg.quote.asset_id"></object-link> {{ `For ${msg.base.amount}`}} <object-link :objectid="msg.base.asset_id"></object-link>
+          @<time-label :time="msg.timestamp"></time-label>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
 
 <script>
-import AppLogo from '~/components/AppLogo.vue'
+import TimeLabel from '~/components/TimeLabel.vue'
+import ObjectLink from '~/components/ObjectLink.vue'
 import { graphene } from '~/components/graphene'
 
 export default {
@@ -17,7 +25,8 @@ export default {
     }
   },
   components: {
-    AppLogo
+    TimeLabel,
+    ObjectLink
   },
   methods: {
     onNewAction (newMsg) {
@@ -25,21 +34,12 @@ export default {
     }
   },
   mounted () {
-    const callback = this.onNewAction
-    graphene.start({callback})
+    graphene.registerListener(this.onNewAction)
   }
 }
 </script>
 
 <style>
-.container {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  /* overflow: scroll; */
-}
 
 .title {
   font-family: "Quicksand", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* 1 */
@@ -62,9 +62,44 @@ export default {
   padding-top: 15px;
 }
 
+.msgContainer {
+  text-align: left;
+  padding:       4px 4px 4px 4px;
+  margin-bottom: 5px;
+  border:        1px solid #e3e3e3;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  box-shadow:         inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  font-weight:   140;
+  font-size:     0.95em;
+  z-index:       10;
+  /* position:      relative; */
+  overflow:      hidden;
+  /* line-height:   1.229; */
+  min-width: 80%;
+  height: 100%;
+  float: right;
+  background:    #FFF;
+  margin-left: 100px;
+  vertical-align: top;
+  /* position: fixed;
+  top: 20px; */
+}
+
+.msgContainer h5 {
+  text-align: center;
+  margin-top: 10px;
+}
+
 .account_action {
-  font-size: 1em;
-  width: 500px;
-  word-wrap:break-word;
+  /* background:    #888; */
+  /* color:         #888; */
+  border-radius: 2px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  box-shadow:         inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  padding:       4px 4px 4px 27px;
+  margin-bottom: 5px;
+  line-height:   1.229;
+  list-style:none;
 }
 </style>
