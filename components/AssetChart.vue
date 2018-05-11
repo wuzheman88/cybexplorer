@@ -23,7 +23,7 @@ export default {
     var downColor = '#00da3c'
     var downBorderColor = '#008F28'
     const end = this.end || Date.now()
-    const start = this.start || end - 3600 * 1000 * 24 * 10
+    const start = this.start || end - 3600 * 1000 * 24 * 7
     const marketHistory = await graphene.queryMarketHistory(this.data.base, this.data.quote, new Date(start), new Date(end), function(x){console.log('subscribe', x)})
     const datas = []
     marketHistory.prices.forEach((price) => {
@@ -138,15 +138,15 @@ export default {
       }
     ]
     if (!this.data.snapshot) {
-      seriesList.push({
-        name: 'MA5',
-        type: 'line',
-        data: calculateMA(5),
-        smooth: true,
-        lineStyle: {
-          normal: {opacity: 0.5}
-        }
-      })
+      // seriesList.push({
+      //   name: 'MA5',
+      //   type: 'line',
+      //   data: calculateMA(5),
+      //   smooth: true,
+      //   lineStyle: {
+      //     normal: {opacity: 0.5}
+      //   }
+      // })
       seriesList.push({
         name: 'MA7',
         type: 'line',
@@ -156,24 +156,24 @@ export default {
           normal: {opacity: 0.5}
         }
       })
-      seriesList.push({
-        name: 'MA20',
-        type: 'line',
-        data: calculateMA(20),
-        smooth: true,
-        lineStyle: {
-          normal: {opacity: 0.5}
-        }
-      })
-      seriesList.push({
-        name: 'MA30',
-        type: 'line',
-        data: calculateMA(30),
-        smooth: true,
-        lineStyle: {
-          normal: {opacity: 0.5}
-        }
-      })
+      // seriesList.push({
+      //   name: 'MA20',
+      //   type: 'line',
+      //   data: calculateMA(20),
+      //   smooth: true,
+      //   lineStyle: {
+      //     normal: {opacity: 0.5}
+      //   }
+      // })
+      // seriesList.push({
+      //   name: 'MA30',
+      //   type: 'line',
+      //   data: calculateMA(30),
+      //   smooth: true,
+      //   lineStyle: {
+      //     normal: {opacity: 0.5}
+      //   }
+      // })
     }
 
     function calculateMA(dayCount) {
