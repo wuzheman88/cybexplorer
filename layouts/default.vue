@@ -19,20 +19,14 @@
     </el-header>
     <el-container class="main-container">
       <!-- 导航菜单 -->
-      <el-aside width="250px" style="margin-top: 35px;">
+      <el-aside width="350px" style="margin-top: 35px;">
         <el-card class="bb-box-card" style="margin-top: 10px;">
           <div slot="header" class="clearfix">
             <h3>委员会成员</h3>
           </div>
-          <el-form v-model="accountInfo" label-width="80px">
-            <el-form-item label="等级30">
-              <h4>{{ 'sadaff' }}</h4>
-            </el-form-item>
-            <el-form-item label="等级31">
-              <h4>{{ 'accountInfo.level' }}</h4>
-            </el-form-item>
-            <el-form-item label="等级32">
-              <h4>{{ 'kkkk' }}</h4>
+          <el-form v-for="(memb, index) in committeMembers" :key="index" label-width="40px">
+            <el-form-item :label="`${index + 1}.`">
+              <object-link :objectid="memb"></object-link>
             </el-form-item>
           </el-form>
         </el-card>
@@ -41,16 +35,10 @@
           <div slot="header" class="clearfix">
             <h3>区块链信息</h3>
           </div>
-          <el-form v-model="accountInfo" label-width="80px">
-            <!-- <el-form-item label="等级">
-              <h4>{{ 'accountInfo.level' }}</h4>
+          <el-form label-width="240px">
+            <el-form-item v-for="(item, key, index) in blockParameters" :key="index" v-if="typeof item !== 'object'" :label="key">
+              <p>{{item}}</p>
             </el-form-item>
-            <el-form-item label="等级">
-              <h4>{{ 'accountInfo.level' }}</h4>
-            </el-form-item>
-            <el-form-item label="等级">
-              <h4>{{ 'accountInfo.level' }}</h4>
-            </el-form-item> -->
           </el-form>
         </el-card>
       </el-aside>
@@ -194,6 +182,7 @@ body {
 import { Barrage } from '~/components/barrage.js'
 import { graphene } from '~/components/graphene'
 import io from 'socket.io-client'
+import ObjectLink from '~/components/ObjectLink.vue'
 
 let socket
 
@@ -201,8 +190,12 @@ export default {
   data () {
     return {
       isConnected: false,
-      content: ''
+      content: '',
+      committeMembers: null
     }
+  },
+  components: {
+    ObjectLink
   },
   methods: {
     onSearch () {
@@ -244,12 +237,15 @@ export default {
     //   this.barrage.shoot(message)
     // })
   },
-  mounted () {
+  async mounted () {
+    const obj = this
     graphene.on('connected', function () {
-      this.isConnected = true
+      obj.isConnected = true
     })
-    graphene.start(WebSocket)
-
+    await graphene.start()
+    const params = await graphene.queryGlobalProperties()
+    obj.committeMembers = params.active_committee_members
+    obj.blockParameters = params.parameters
     // let canvas = this.$refs.dan_canvas
     // canvas.width = document.documentElement.clientWidth
     // canvas.height = document.documentElement.clientHeight

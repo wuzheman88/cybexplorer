@@ -22,6 +22,10 @@
       </div>
     </div>
     <p v-if="type === 'asset_dynamic_data'">{{displayName}}</p>
+    <div v-if="type === 'committee member'">
+      <nuxt-link class="obj-link" :to="routeNext">{{displayName}}</nuxt-link>
+      <p style="float:right">{{(objData.total_votes / 1000000).toFixed(1)}}M</p>
+    </div>
     <p v-if="type === 'vesting balance'">{{`${objData.amount} ${displayName}`}}</p>
     <nuxt-link v-else class="obj-link" :to="routeNext">{{displayName}}</nuxt-link>
   </el-tooltip>
@@ -90,10 +94,12 @@ export default {
   },
   computed: {
     displayName () {
-      return this.objData ? this.objData.name || this.objData.symbol || this.objData.current_supply : ''
+      const newName = this.objData ? this.objData.name || this.objData.symbol || this.objData.current_supply : ''
+      console.log('#####displayName', this.objData, newName)
+      return newName
     },
     routeNext () {
-      return `/${this.type === 'witness' ? 'account' : this.type}/${this.displayName}`
+      return `/${['witness', 'committee member'].indexOf(this.type) !== -1 ? 'account' : this.type.split(' ').join('_')}/${this.displayName}`
     },
     type () {
       const matched = /^([1-2]\.\d+)\.\d+$/.exec(this.objectid)
@@ -119,13 +125,18 @@ export default {
         this.objData = resultBalance[0]
         this.objData.amount = balance.amount
         break
+      case 'committee member':
+        const committeeInfo = await graphene.queryObject(result[0].committee_member_account)
+        this.objData = committeeInfo[0]
+        this.objData.total_votes = result[0].total_votes
+        break
       default:
         this.objData = result[0]
         this.objData.statisticsInfo = await graphene.queryObject(this.objData.statistics)
-        console.log('final statisticsInfo', this.objData.statisticsInfo)
+        // console.log('final statisticsInfo', this.objData.statisticsInfo)
     }
     if (config.dev) {
-      console.log('ObjectLink', result, RULE_TABLE[0])
+      console.log('ObjectLink', this.type, this.objData, result[0])
     }
   },
   updated () {

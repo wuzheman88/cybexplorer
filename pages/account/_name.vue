@@ -56,11 +56,11 @@ export default {
     }
   },
   async mounted () {
-    graphene.doQuery({
+    await graphene.doQuery({
       type: 'account',
-      string: this.$route.params.name,
-      callback: this.updateAccount
+      string: this.$route.params.name
     })
+    this.updateAccount()
   }
 }
 </script>

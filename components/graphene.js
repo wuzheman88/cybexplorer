@@ -66,23 +66,27 @@ class Graphene {
     this['on' + event] = listener
   }
 
-  start () {
-    this.selectNode(this.doConnect)
+  async start () {
+    const bestNode = await this.selectNode()
+    await this.doConnect(bestNode)
   }
 
-  doConnect (cs) {
+  async doConnect (cs) {
     Apis.setRpcConnectionStatusCallback(self.onConnectionStatusChanged)
     Apis.setAutoReconnect(true)
-    Apis.instance(cs, true).init_promise.then(async (res) => {
-      Apis.instance().db_api().exec('set_subscribe_callback', [self.updateListener, true])
-      // Apis.instance().db_api().exec('set_pending_transaction_callback', [this.transactionListener, true])
-      while (self.unhandledQueue.length > 0) {
-        const unhandled = self.unhandledQueue.shift()
-        if (self.onconnected) {
-          self.onconnected()
+    return new Promise (function (resolve, reject) {
+      Apis.instance(cs, true).init_promise.then(async (res) => {
+        Apis.instance().db_api().exec('set_subscribe_callback', [self.updateListener, true])
+        // Apis.instance().db_api().exec('set_pending_transaction_callback', [this.transactionListener, true])
+        while (self.unhandledQueue.length > 0) {
+          const unhandled = self.unhandledQueue.shift()
+          if (self.onconnected) {
+            self.onconnected()
+          }
+          await self.exec(unhandled.action, unhandled.param, unhandled.callback)
         }
-        await self.exec(unhandled.action, unhandled.param, unhandled.callback)
-      }
+        resolve()
+      })
     })
   }
 
@@ -98,44 +102,46 @@ class Graphene {
     }
   }
 
-  selectNode (callback) {
+  async selectNode () {
     let minDelay = Number.MAX_SAFE_INTEGER
     let minCs = null
     let idx = 0
     const WSocket = WebSocket
     let timeout = false
-    setTimeout(function () {
-      if (minCs) {
-        idx = NODE_LIST.length
-        timeout = true
-        if (config.dev) {
-          console.log('选取延迟最低的节点：', minCs, minDelay)
-        }
-        callback(minCs)
-      }
-    }, 500)
-    NODE_LIST.forEach((cs) => {
-      // console.log('websocks', cs)
-      const testSock = new WSocket(cs)
-      const preTime = Date.now()
-      testSock.onopen = () => {
-        const delay = Date.now() - preTime
-        if (config.dev) {
-          console.log('延迟：', cs, delay)
-        }
-        if (!timeout) {
-          if (delay < minDelay) {
-            minDelay = delay
-            minCs = cs
+    return new Promise(function (resolve, reject) {
+      setTimeout(function () {
+        if (minCs) {
+          idx = NODE_LIST.length
+          timeout = true
+          if (config.dev) {
+            console.log('选取延迟最低的节点：', minCs, minDelay)
           }
-          if (++idx === NODE_LIST.length) {
-            if (config.dev) {
-              console.log('选取延迟最低的节点：', minCs, minDelay)
+          resolve(minCs)
+        }
+      }, 500)
+      NODE_LIST.forEach((cs) => {
+        // console.log('websocks', cs)
+        const testSock = new WSocket(cs)
+        const preTime = Date.now()
+        testSock.onopen = () => {
+          const delay = Date.now() - preTime
+          if (config.dev) {
+            console.log('延迟：', cs, delay)
+          }
+          if (!timeout) {
+            if (delay < minDelay) {
+              minDelay = delay
+              minCs = cs
             }
-            callback(minCs)
+            if (++idx === NODE_LIST.length) {
+              if (config.dev) {
+                console.log('选取延迟最低的节点：', minCs, minDelay)
+              }
+              resolve(minCs)
+            }
           }
         }
-      }
+      })
     })
   }
 
@@ -176,17 +182,21 @@ class Graphene {
     // console.log('set_pending_transaction_callback:\n', object)
   }
 
-  doQuery ({type, string, callback}) {
+  async doQuery ({type, string}) {
     const method = DETAIL_QUERY_LIST[type]
     const action = method.action
     const param = method.paramCb(string)
     if (self.currentNode) {
-      self.exec(action, param, callback)
+      return await self.exec(action, param)
     } else {
-      self.unhandledQueue.push({
-        param: param,
-        action: action,
-        callback: callback
+      return new Promise (function (resolve, reject) {
+        self.unhandledQueue.push({
+          param: param,
+          action: action,
+          callback: function (x) {
+            resolve(x)
+          }
+        })
       })
     }
   }
@@ -235,7 +245,7 @@ class Graphene {
   async queryAccount (name) {
     const result = await Apis.instance().db_api().exec('get_account_by_name', [name])
     if (config.dev) {
-      console.log('queryAccount', result)
+      // console.log('queryAccount', result)
     }
     return result
   }
@@ -243,35 +253,36 @@ class Graphene {
   async queryWitness (id) {
     const result = await Apis.instance().db_api().exec('get_objects', [id])
     if (config.dev) {
-      console.log('queryWitness', result)
+      // console.log('queryWitness', result)
     }
     return result
   }
 
-  async exec (action, param, callback) {
+  async exec (action, param) {
     const result = await Apis.instance().db_api().exec(action, param)
     if (config.dev) {
-      console.log('query', action, result)
+      // console.log('query', action, result)
     }
-    callback(result)
+    // callback(result)
+    return result
   }
 
-  async queryBlock (blockNum, callback) {
-    if (self.currentNode) {
-      self.exec('get_block', [blockNum], callback)
-    } else {
-      self.unhandledQueue.push({
-        param: [blockNum],
-        action: 'get_block',
-        callback: callback
-      })
-    }
-  }
+  // async queryBlock (blockNum, callback) {
+  //   if (self.currentNode) {
+  //     self.exec('get_block', [blockNum], callback)
+  //   } else {
+  //     self.unhandledQueue.push({
+  //       param: [blockNum],
+  //       action: 'get_block',
+  //       callback: callback
+  //     })
+  //   }
+  // }
 
   async queryAsset (symbol) {
     const result = await Apis.instance().db_api().exec('lookup_asset_symbols', [[symbol]])
     if (config.dev) {
-      console.log('queryAsset', result)
+      // console.log('queryAsset', result)
     }
     return result
   }
@@ -281,10 +292,10 @@ class Graphene {
     try {
       result = await Apis.instance().db_api().exec('get_objects', [[objectId]])
     } catch (e) {
-      console.log('queryObject', e, objectId)
+      // console.log('queryObject', e, objectId)
     }
     if (config.dev) {
-      console.log('queryObject', result)
+      // console.log('queryObject', result)
     }
     return result
   }
@@ -296,7 +307,7 @@ class Graphene {
       [base, quote, 3600, startISO, endISO])
     const ticker = Apis.instance().db_api().exec("get_ticker", [base, quote])
     const subscribeCallback = function (x, y, z) {
-      console.log('subscribeCallback', x, y, z)
+      // console.log('subscribeCallback', x, y, z)
       callback()
     }
     Apis.instance().db_api().exec("subscribe_to_market", [subscribeCallback, base, quote])
@@ -304,6 +315,16 @@ class Graphene {
       ticker: ticker,
       prices: result
     }
+  }
+
+  async queryGlobalProperties () {
+    let globalParams
+    try {
+      globalParams = await Apis.instance().db_api().exec( "get_global_properties", [])
+    } catch (e) {
+      // console.log('queryGlobalProperties2', e)
+    }
+    return globalParams
   }
 }
 
