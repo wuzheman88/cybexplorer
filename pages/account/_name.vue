@@ -30,6 +30,9 @@
             <el-form-item v-if="accountInfo.cashback_vb" label="资产">
               <object-link :objectid="accountInfo.cashback_vb"></object-link>
             </el-form-item>
+            <div v-if="accountInfo.statistics" label="历史统计">
+              <object-link :objectid="accountInfo.statistics"></object-link>
+            </div>
           </el-form>
         </el-card>
       </el-col>
@@ -51,25 +54,21 @@ export default {
     ObjectLink
   },
   methods: {
-    updateAccount (res) {
-      this.accountInfo = res
-    }
   },
   async mounted () {
-    await graphene.doQuery({
+    this.accountInfo = await graphene.doQuery({
       type: 'account',
       string: this.$route.params.name
     })
-    this.updateAccount()
+
+    // const statistics = this.accountInfo.statistics
+    // // const result = await graphene.queryObject(statistics)
+    // console.log('account statistics', statistics, JSON.stringify(this.accountInfo))
   }
 }
 </script>
 
 <style>
-/* div {
-  width: 100%;
-} */
-
 .box-card {
   width: 100%;
   margin-top: 35px;

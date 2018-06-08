@@ -18,10 +18,13 @@ import TimeLabel from '~/components/TimeLabel.vue'
 import ObjectLink from '~/components/ObjectLink.vue'
 import { graphene } from '~/components/graphene'
 
+const MAX_SHOW_TRANSACTION_NUM = 10
+
 export default {
   data () {
     return {
-      actionList: []
+      actionList: [],
+      cacheList: []
     }
   },
   components: {
@@ -31,6 +34,9 @@ export default {
   methods: {
     onNewAction (newMsg) {
       this.actionList.unshift(newMsg)
+      if (this.actionList.length > MAX_SHOW_TRANSACTION_NUM) {
+        this.cacheList = this.cacheList.concat(this.actionList.splice(MAX_SHOW_TRANSACTION_NUM))
+      }
     }
   },
   mounted () {
@@ -40,7 +46,6 @@ export default {
 </script>
 
 <style>
-
 .title {
   font-family: "Quicksand", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* 1 */
   display: block;
@@ -64,26 +69,20 @@ export default {
 
 .msgContainer {
   text-align: left;
-  padding:       4px 4px 4px 4px;
   margin-bottom: 5px;
   border:        1px solid #e3e3e3;
   border-radius: 4px;
   -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
   box-shadow:         inset 0 1px 1px rgba(0, 0, 0, 0.05);
-  font-weight:   140;
-  font-size:     0.95em;
+  font-weight:   130;
+  font-size:     0.65em;
   z-index:       10;
-  /* position:      relative; */
   overflow:      hidden;
-  /* line-height:   1.229; */
-  min-width: 80%;
-  height: 100%;
+  min-width: 100%;
   float: right;
-  background:    #FFF;
-  margin-left: 100px;
+  background:     #7F8C98;
   vertical-align: top;
-  /* position: fixed;
-  top: 20px; */
+  float: left;
 }
 
 .msgContainer h5 {
@@ -92,14 +91,11 @@ export default {
 }
 
 .account_action {
-  /* background:    #888; */
-  /* color:         #888; */
   border-radius: 2px;
   -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
   box-shadow:         inset 0 1px 1px rgba(0, 0, 0, 0.05);
-  padding:       4px 4px 4px 27px;
   margin-bottom: 5px;
-  line-height:   1.229;
+  line-height:   1.229em;
   list-style:none;
 }
 </style>

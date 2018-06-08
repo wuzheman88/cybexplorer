@@ -27,14 +27,25 @@
       <p style="float:right">{{(objData.total_votes / 1000000).toFixed(1)}}M</p>
     </div>
     <p v-if="type === 'vesting balance'">{{`${objData.amount} ${displayName}`}}</p>
+    <div v-if="type==='account_statistics_object'">
+      <p>手续费总支出：{{objData.lifetime_fees_paid}}</p>
+      <p>待结费用：{{objData.pending_fees}}</p>
+      <p>待解冻金额：{{objData.pending_vested_fees}}</p>
+      <p>总操作数：{{objData.total_ops}}</p>
+      <p>取消操作数：{{objData.removed_ops}}</p>
+    </div>
     <nuxt-link v-else class="obj-link" :to="routeNext">{{displayName}}</nuxt-link>
   </el-tooltip>
 </template>
 
-<style>
+<style lang="less" scoped>
 .obj-link {
   margin-right: 4px;
   margin-left: 4px;
+}
+
+div {
+  display: inline-block;
 }
 </style>
 
@@ -95,7 +106,7 @@ export default {
   computed: {
     displayName () {
       const newName = this.objData ? this.objData.name || this.objData.symbol || this.objData.current_supply : ''
-      console.log('#####displayName', this.objData, newName)
+      // console.log('#####displayName', this.objData, newName)
       return newName
     },
     routeNext () {
@@ -103,6 +114,7 @@ export default {
     },
     type () {
       const matched = /^([1-2]\.\d+)\.\d+$/.exec(this.objectid)
+      // console.log('thie.objectid: ', this.objectid, matched)
       return matched ? RULE_TABLE[matched[1]] : 'account'
     }
   },
@@ -130,13 +142,46 @@ export default {
         this.objData = committeeInfo[0]
         this.objData.total_votes = result[0].total_votes
         break
+      case 'account_statistics_object':
+        this.objData = result[0]
+        const recentOp = await graphene.queryObject(this.objData.most_recent_op)
+        const operation = await graphene.queryObject(recentOp[0].operation_id)
+        const opContent = await graphene.queryObject(operation[0].id)
+        console.log('$$$$$$$$ this.objData account_statistics_object', opContent)
+        this.objData.recentOption = opContent[0]
+        // recentOption:
+        // {
+        //   "id": "1.11.7890145",
+        //   "op": [4, {
+        //     "fee": {
+        //       "amount": 0,
+        //       "asset_id": "1.3.0"
+        //     },
+        //     "order_id": "1.7.3220663",
+        //     "account_id": "1.2.31038",
+        //     "pays": {
+        //       "amount": 8219400,
+        //       "asset_id": "1.3.27"
+        //     },
+        //     "receives": {
+        //       "amount": 2103336,
+        //       "asset_id": "1.3.0"
+        //     }
+        //   }],
+        //   "result": [0, {}],
+        //   "block_num": 2819785,
+        //   "trx_in_block": 9,
+        //   "op_in_trx": 0,
+        //   "virtual_op": 12632
+        // }
+        break
       default:
         this.objData = result[0]
         this.objData.statisticsInfo = await graphene.queryObject(this.objData.statistics)
         // console.log('final statisticsInfo', this.objData.statisticsInfo)
     }
     if (config.dev) {
-      console.log('ObjectLink', this.type, this.objData, result[0])
+      // console.log('ObjectLink', this.type, this.objData, result[0])
     }
   },
   updated () {

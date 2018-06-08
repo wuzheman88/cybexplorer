@@ -19,44 +19,69 @@
     </el-header>
     <el-container class="main-container">
       <!-- 导航菜单 -->
-      <el-aside width="350px" style="margin-top: 35px;">
-        <el-card class="bb-box-card" style="margin-top: 10px;">
+      <el-aside class="sidebar" style="width:35%;height:700px;">
+        <div style="height:50%;overflow:hidden;">
+          <h3>委员会成员</h3>
+          <ul>
+            <li v-for="(memb, index) in committeMembers" :key="index">
+                {{`${index + 1}.`}}<object-link :objectid="memb"></object-link>
+            </li>
+          </ul>
+        </div>
+
+        <div class="bb-box-card" style="height:50%;overflow:hidden;">
           <div slot="header" class="clearfix">
-            <h3>委员会成员</h3>
+            <h3>区块链信息</h3>
+          </div>
+          <ul>
+            <li v-for="(item, key, index) in blockParameters" v-if="typeof item !== 'object'" :key="index">
+                {{key}}<span style="float:right;">{{item}}</span>
+            </li>
+          </ul>
+          <!-- <el-form label-width="240px">
+            <el-form-item v-for="(item, key, index) in blockParameters" :key="index" v-if="typeof item !== 'object'" :label="key">
+              <p>{{item}}</p>
+            </el-form-item>
+          </el-form> -->
+        </div>
+      </el-aside>
+      <el-container>
+      <!-- 内容部分 -->
+      <el-main>
+        <!-- <el-breadcrumb separator-class="el-icon-arrow-right">
+          <el-breadcrumb-item v-for="(item, i) in $route.matched"
+            :to="i < $route.matched.length-1 ? item.path : undefined"
+            :key="item.path">
+            {{ item.name }}
+          </el-breadcrumb-item>
+        </el-breadcrumb> -->
+        <nuxt/>
+      </el-main>
+      <el-aside class="sidebar" style="width:45%;height:700px;">
+        <div class="bb-box-card" style="height:50%;overflow:hidden;">
+          <div slot="header" class="clearfix">
+            <h3>当前区块</h3>
           </div>
           <el-form v-for="(memb, index) in committeMembers" :key="index" label-width="40px">
             <el-form-item :label="`${index + 1}.`">
               <object-link :objectid="memb"></object-link>
             </el-form-item>
           </el-form>
-        </el-card>
+        </div>
 
-        <el-card class="bb-box-card" style="margin-top: 35px;">
+        <div class="bb-box-card" style="height:50%;overflow:hidden;">
           <div slot="header" class="clearfix">
-            <h3>区块链信息</h3>
+            <h3>最近区块</h3>
           </div>
           <el-form label-width="240px">
             <el-form-item v-for="(item, key, index) in blockParameters" :key="index" v-if="typeof item !== 'object'" :label="key">
               <p>{{item}}</p>
             </el-form-item>
           </el-form>
-        </el-card>
+        </div>
       </el-aside>
-      <!-- 内容部分 -->
-      <el-main>
-        <el-breadcrumb separator-class="el-icon-arrow-right">
-          <el-breadcrumb-item v-for="(item, i) in $route.matched"
-            :to="i < $route.matched.length-1 ? item.path : undefined"
-            :key="item.path">
-            {{ item.name }}
-          </el-breadcrumb-item>
-        </el-breadcrumb>
-        <nuxt/>
-      </el-main>
+      </el-container>
     </el-container>
-    <!-- <canvas ref="dan_canvas" class="edit-modal">
-        您的浏览器太旧了，推荐升级至弹幕浏览器
-    </canvas> -->
   </el-container>
 </template>
 
@@ -80,6 +105,10 @@ body {
 *, *:before, *:after {
   box-sizing: border-box;
   margin: 0;
+}
+
+li {
+  list-style: none;
 }
 
 .button--green {
@@ -116,7 +145,6 @@ body {
 }
 
 .suggestion-class {
-  /* font-size: 32em; */
   color: red;
 }
 
@@ -129,20 +157,10 @@ body {
   font-size: 1.5em;
 }
 
-.main-container {
-  position: absolute;
-  padding-top: 50px;
-  min-height: 100%;
-  width: 100%;
-  margin-top: 25px;
-}
-
 .el-header {
   z-index: 2000;
-
   background-color: rgb(84, 92, 100);
   color: #fff;
-
   line-height: 50px;
   min-height: 110px;
 
@@ -156,25 +174,28 @@ body {
   }
 }
 
+.sidebar {
+  width: 430px;
+  color: white;
+  text-decoration: none;
+
+  h3 {
+    text-align: center;
+  }
+
+  div {
+    background: #7F8C98;
+    border-radius: 0.35em;
+    margin: 3px;
+  }
+}
+
 .box-card {
   margin-top: 35px;
 }
 
-.container {
-  /* min-height: 100vh; */
-  min-height: 100%;
-  display: flex;
-  justify-content: center;
-  text-align: center;
-  margin-top: 20px;
-}
-
-.edit-modal {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  bottom: 0px;
-  z-index: 100;
+.bb-box-card {
+  margin: 5px 25px;
 }
 </style>
 

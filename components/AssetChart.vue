@@ -26,8 +26,20 @@ export default {
     const start = this.start || end - 3600 * 1000 * 24 * 7
     const marketHistory = await graphene.queryMarketHistory(this.data.base, this.data.quote, new Date(start), new Date(end), function(x){console.log('subscribe', x)})
     const datas = []
+
+    // const baseAsset = await this.$store.dispatch('api/query_asset', {assetid: this.data.base})
+    // const quoteAsset = await this.$store.dispatch('api/query_asset', {assetid: this.data.quote})
+    const baseAsset = await graphene.queryObject(this.data.base)
+    const quoteAsset = await graphene.queryObject(this.data.quote)
+    baseAsset.rate = Math.pow(10, baseAsset[0].precision)
+    quoteAsset.rate = Math.pow(10, quoteAsset[0].precision)
+
     marketHistory.prices.forEach((price) => {
-      datas.push([price.key.open, price.open_base / price.open_quote, price.close_base / price.close_quote, price.low_base / price.low_quote, price.high_base / price.high_quote])
+      const openPrice = (price.open_base / baseAsset.rate) / (price.open_quote / quoteAsset.rate)
+      const closePrice = (price.close_base / baseAsset.rate) / (price.close_quote / quoteAsset.rate)
+      const lowPrice = (price.low_base / baseAsset.rate) / (price.low_quote / quoteAsset.rate)
+      const highPrice = (price.high_base / baseAsset.rate) / (price.high_quote / quoteAsset.rate)
+      datas.push([price.key.open, openPrice, closePrice, lowPrice, highPrice])
     })
 
     // 数据意义：开盘(open)，收盘(close)，最低(lowest)，最高(highest)
@@ -36,8 +48,9 @@ export default {
       var categoryData = []
       var values = []
       for (var i = 0; i < rawData.length; i++) {
-        categoryData.push(rawData[i].splice(0, 1)[0])
-        values.push(rawData[i])
+        const cat = rawData[i].splice(0, 1)[0]
+        categoryData.push(cat)
+        values.push(rawData[i])                      
       }
       return {
         categoryData: categoryData,
@@ -74,22 +87,22 @@ export default {
               itemStyle: {
                 normal: {color: 'rgb(41,60,85)'}
               }
-            },
-            {
-              name: 'highest value',
-              type: 'max',
-              valueDim: 'highest'
-            },
-            {
-              name: 'lowest value',
-              type: 'min',
-              valueDim: 'lowest'
-            },
-            {
-              name: 'average value on close',
-              type: 'average',
-              valueDim: 'close'
             }
+            // {
+            //   name: 'highest value',
+            //   type: 'max',
+            //   valueDim: 'highest'
+            // },
+            // {
+            //   name: 'lowest value',
+            //   type: 'min',
+            //   valueDim: 'lowest'
+            // },
+            // {
+            //   name: 'average value on close',
+            //   type: 'average',
+            //   valueDim: 'close'
+            // }
           ],
           tooltip: {
             formatter: function (param) {

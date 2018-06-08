@@ -18,7 +18,7 @@
           <object-link :objectid="assetInfo.issuer"></object-link>
         </el-form-item>
         <el-form-item label="精度">
-          <h4>{{ assetInfo.precision }}</h4>
+          <h4>{{ Math.pow(10, assetInfo.precision) }}</h4>
         </el-form-item>
         <el-form-item v-if="assetInfo.dynamic_asset_data_id" label="当前供给">
           <object-link :objectid="assetInfo.dynamic_asset_data_id"></object-link>
@@ -52,16 +52,13 @@ export default {
     AssetChart
   },
   methods: {
-    updateAssetInfo (res) {
-      this.assetInfo = res[0]
-    }
   },
   async mounted () {
-    graphene.doQuery({
+    const res = await graphene.doQuery({
       type: 'asset',
-      string: this.$route.params.name,
-      callback: this.updateAssetInfo
+      string: this.$route.params.name
     })
+    this.assetInfo = res[0]
   }
 }
 </script>

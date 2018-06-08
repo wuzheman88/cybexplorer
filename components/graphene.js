@@ -83,7 +83,7 @@ class Graphene {
           if (self.onconnected) {
             self.onconnected()
           }
-          await self.exec(unhandled.action, unhandled.param, unhandled.callback)
+          await self.execute(unhandled.action, unhandled.param, unhandled.callback)
         }
         resolve()
       })
@@ -163,8 +163,8 @@ class Graphene {
     // }
     const transactions = obj[0]
     transactions.forEach(async transaction => {
+      console.log('$$$$$$ transaction callback:', transaction)
       if (transaction.seller) {
-        // console.log(transaction, self.sCallback)
         let trxObj = {
           seller: transaction.seller,
           timestamp: transaction.expiration,
@@ -187,7 +187,7 @@ class Graphene {
     const action = method.action
     const param = method.paramCb(string)
     if (self.currentNode) {
-      return await self.exec(action, param)
+      return await self.execute(action, param)
     } else {
       return new Promise (function (resolve, reject) {
         self.unhandledQueue.push({
@@ -242,6 +242,13 @@ class Graphene {
     callback(queryResults)
   }
 
+  async queryAccountHistroy (accountid, limit) {
+    const result = Apis.instance().history_api().exec( "get_account_history", [accountid, '1.11.0', limit, '1.11.0']).then((x)=>{
+      console.log(JSON.stringify(x))
+    })
+    return result
+  }
+
   async queryAccount (name) {
     const result = await Apis.instance().db_api().exec('get_account_by_name', [name])
     if (config.dev) {
@@ -258,7 +265,7 @@ class Graphene {
     return result
   }
 
-  async exec (action, param) {
+  async execute (action, param) {
     const result = await Apis.instance().db_api().exec(action, param)
     if (config.dev) {
       // console.log('query', action, result)
