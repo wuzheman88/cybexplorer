@@ -12,7 +12,7 @@ const NODE_LIST = [
 ]
 
 // let sCallback = function () {}
-
+// 搜索框建议
 const SUGGEST_QUERY_LIST = {
   account: {
     action: 'lookup_accounts',
@@ -31,7 +31,7 @@ const SUGGEST_QUERY_LIST = {
     desc: '资产'
   }
 }
-
+// 详情查询
 const DETAIL_QUERY_LIST = {
   account: {
     action: 'get_account_by_name',
@@ -105,6 +105,7 @@ class Graphene {
     }
   }
 
+  // 选取延迟最低的节点
   async selectNode (WSocket) {
     let minDelay = Number.MAX_SAFE_INTEGER
     let minCs = null
@@ -187,6 +188,7 @@ class Graphene {
     if (self.currentNode) {
       return await self.execute(action, param)
     } else {
+      // 未连接节点时
       return new Promise (function (resolve, reject) {
         self.unhandledQueue.push({
           param: param,
