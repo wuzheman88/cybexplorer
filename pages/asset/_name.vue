@@ -1,69 +1,34 @@
 <template>
   <div class="container">    
-    <el-card class="box-card">
-      <div slot="header" class="clearfix">
+    <div class="box-card">
+      <div style="text-align:center;">
         <h3>资产信息</h3>
       </div>
-      <el-form v-if="assetInfo" label-width="120px">
-        <el-form-item label="资产缩写">
-          <h4>{{ assetInfo.symbol }}</h4>
-        </el-form-item>
-        <el-form-item label="资产ID">
-          <h4>{{ assetInfo.id }}</h4>
-        </el-form-item>
-        <el-form-item v-if="assetInfo.options" label="最高交易费">
-          <h4>{{ assetInfo.options.max_market_fee }}</h4>
-        </el-form-item>
-        <el-form-item v-if="assetInfo.issuer" label="发行人">
-          <object-link :objectid="assetInfo.issuer"></object-link>
-        </el-form-item>
-        <el-form-item label="精度">
-          <h4>{{ Math.pow(10, assetInfo.precision) }}</h4>
-        </el-form-item>
-        <el-form-item v-if="assetInfo.dynamic_asset_data_id" label="当前供给">
-          <object-link :objectid="assetInfo.dynamic_asset_data_id"></object-link>
-        </el-form-item>
-        <el-form-item v-if="assetInfo.options" label="最大供给">
-          <h4>{{ assetInfo.options.max_supply }}</h4>
-        </el-form-item>
-      </el-form>
+      <ul v-if="assetInfo" label-width="120px">
+        <li><span>资产缩写</span><div>{{ assetInfo.symbol }}</div></li>
+        <li><span>资产ID</span><div>{{ assetInfo.id }}</div></li>
+        <li v-if="assetInfo.options"><span>最高交易费</span><div>{{ assetInfo.options.max_market_fee }}</div></li>
+        <li v-if="assetInfo.issuer"><span>发行人</span><div><object-link :objectid="assetInfo.issuer"></object-link></div></li>
+        <li><span>精度</span><div>{{ Math.pow(10, assetInfo.precision) }}</div></li>
+        <li v-if="assetInfo.dynamic_asset_data_id"><span>当前供给</span><div><object-link :objectid="assetInfo.dynamic_asset_data_id"></object-link></div></li>
+        <li v-if="assetInfo.options"><span>最大供给</span><div>{{ assetInfo.options.max_supply }}</div></li>
+      </ul>
       <asset-chart v-if="assetInfo.id" :data="{
           base: assetInfo.id,
           quote: '1.3.0'
         }"></asset-chart>
-    </el-card>
+    </div>
   </div>
 </template>
 
-<script>
-import ObjectLink from '~/components/ObjectLink.vue'
-import AssetChart from '~/components/AssetChart.vue'
-import { graphene } from '~/components/graphene'
-import echarts from 'echarts'
-
-export default {
-  data () {
-    return {
-      assetInfo: {}
-    }
-  },
-  components: {
-    ObjectLink,
-    AssetChart
-  },
-  methods: {
-  },
-  async mounted () {
-    const res = await graphene.doQuery({
-      type: 'asset',
-      string: this.$route.params.name
-    })
-    this.assetInfo = res[0]
-  }
+<style lang="less" scoped>
+li {
+  line-height: 1.8em;
 }
-</script>
 
-<style>
+li div {
+  float: right;
+}
 
 .title {
   font-family: "Quicksand", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* 1 */
@@ -92,7 +57,37 @@ export default {
 }
 
 .box-card {
-  width: 80%;
+  width: 100%;
   min-height: 100%;
+  background: #7F8C98;
 }
 </style>
+
+<script>
+import ObjectLink from '~/components/ObjectLink.vue'
+import AssetChart from '~/components/AssetChart.vue'
+import { graphene } from '~/components/graphene'
+import echarts from 'echarts'
+
+export default {
+  data () {
+    return {
+      assetInfo: {}
+    }
+  },
+  components: {
+    ObjectLink,
+    AssetChart
+  },
+  methods: {
+  },
+  async mounted () {
+    await graphene.checkPeerConnection(WebSocket)
+    const res = await graphene.doQuery({
+      type: 'asset',
+      string: this.$route.params.name
+    })
+    this.assetInfo = res[0]
+  }
+}
+</script>

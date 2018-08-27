@@ -1,40 +1,38 @@
 <template>
   <div class="container">
-    <el-row style="width:100%;">
+    <el-row>
       <el-col :span="8">
-        <el-card class="box-card">
-          <div slot="header" class="clearfix">
-            <h3>账户信息</h3>
-            <!-- <el-button style="float: right; padding: 3px 0" type="text">清空</el-button> -->
-          </div>
-          <el-form v-model="accountInfo" label-width="80px">
-            <el-form-item label="账户名称">
-              <h4>{{ accountInfo.name }}</h4>
-            </el-form-item>
-            <el-form-item label="账户ID">
-              <h4>{{ accountInfo.id }}</h4>
-            </el-form-item>
-            <el-form-item label="等级">
-              <h4>{{ accountInfo.level }}</h4>
-            </el-form-item>
-          </el-form>
-        </el-card>
+        <h5>账户信息</h5>
+        <ul>
+          <li>
+            账户名称<span>{{ accountInfo.name }}</span>
+          </li>
+          <li>
+            账户ID<span>{{ accountInfo.id }}</span>
+          </li>
+          <li>
+            等级<span>{{ accountInfo.level }}</span>
+          </li>
+        </ul>
       </el-col>
-      <el-col :span="8" :offset="1">
-        <el-card class="box-card">
-          <div slot="header" class="clearfix">
-            <h3>投资组合</h3>
-            <!-- <el-button style="float: right; padding: 3px 0" type="text">清空</el-button> -->
-          </div>
-          <el-form v-model="accountInfo" label-width="80px">
-            <el-form-item v-if="accountInfo.cashback_vb" label="资产">
-              <object-link :objectid="accountInfo.cashback_vb"></object-link>
-            </el-form-item>
-            <div v-if="accountInfo.statistics" label="历史统计">
-              <object-link :objectid="accountInfo.statistics"></object-link>
-            </div>
-          </el-form>
-        </el-card>
+      <el-col :span="8">
+        <h5>投资组合</h5>
+        <ul>
+          <li v-if="accountInfo.cashback_vb">
+            资产<span><object-link :objectid="accountInfo.cashback_vb"></object-link></span>
+          </li>
+          <li v-if="accountInfo.statistics">
+            历史统计<span>{{ accountInfo.statistics }}</span>
+          </li>
+        </ul>
+      </el-col>
+      <el-col :span="8">
+        <h5>活动记录</h5>
+        <ul>
+          <li v-for="(operation, index) in accountHistory" :key="index">
+            <span><operation-item :operation="operation"></operation-item></span>
+          </li>
+        </ul>
       </el-col>
     </el-row>
   </div>
@@ -43,24 +41,30 @@
 <script>
 import { graphene } from '~/components/graphene'
 import ObjectLink from '~/components/ObjectLink.vue'
+import OperationItem from '~/components/OperationItem.vue'
 
 export default {
   data () {
     return {
-      accountInfo: {}
+      accountInfo: {},
+      accountHistory: {},
+      committeMembers: null
     }
   },
   components: {
-    ObjectLink
+    ObjectLink,
+    OperationItem
   },
   methods: {
   },
   async mounted () {
+    await graphene.checkPeerConnection(WebSocket)
     this.accountInfo = await graphene.doQuery({
       type: 'account',
       string: this.$route.params.name
     })
-
+    this.accountHistory = await graphene.queryAccountHistroy(this.accountInfo.id, 10)
+    console.log('accountHistory: ', this.accountHistory)
     // const statistics = this.accountInfo.statistics
     // // const result = await graphene.queryObject(statistics)
     // console.log('account statistics', statistics, JSON.stringify(this.accountInfo))

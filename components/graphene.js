@@ -59,6 +59,7 @@ class Graphene {
     this.unhandledQueue = []
     this.currentNode = ''
     this.sCallback = null
+    this.isConnect = false
     self = this
   }
 
@@ -66,9 +67,9 @@ class Graphene {
     this['on' + event] = listener
   }
 
-  async start () {
-    const bestNode = await this.selectNode()
-    await this.doConnect(bestNode)
+  async start (WSocket) {
+    const bestNode = await self.selectNode(WSocket)
+    await self.doConnect(bestNode)
   }
 
   async doConnect (cs) {
@@ -76,6 +77,7 @@ class Graphene {
     Apis.setAutoReconnect(true)
     return new Promise (function (resolve, reject) {
       Apis.instance(cs, true).init_promise.then(async (res) => {
+        self.isConnect = true
         Apis.instance().db_api().exec('set_subscribe_callback', [self.updateListener, true])
         // Apis.instance().db_api().exec('set_pending_transaction_callback', [this.transactionListener, true])
         while (self.unhandledQueue.length > 0) {
@@ -95,6 +97,7 @@ class Graphene {
       console.log('TCP链路状态变化：', status)
     }
     if (status === 'closed') {
+      self.isConnect = false
       Apis.close().then(self.start)
     } else if (status === 'open') {
       self.currentNode = this.ws.url
@@ -102,45 +105,40 @@ class Graphene {
     }
   }
 
-  async selectNode () {
+  async selectNode (WSocket) {
     let minDelay = Number.MAX_SAFE_INTEGER
     let minCs = null
     let idx = 0
-    const WSocket = WebSocket
     let timeout = false
-    return new Promise(function (resolve, reject) {
-      setTimeout(function () {
-        if (minCs) {
-          idx = NODE_LIST.length
-          timeout = true
-          if (config.dev) {
-            console.log('选取延迟最低的节点：', minCs, minDelay)
-          }
-          resolve(minCs)
-        }
-      }, 500)
-      NODE_LIST.forEach((cs) => {
-        // console.log('websocks', cs)
+
+    const promiseList = []
+    for (let k in NODE_LIST) {
+      const cs = NODE_LIST[k]
+      promiseList.push(new Promise(function (resolve, reject) {
+        console.log('^^^^^^ create connection:', WSocket, cs)
         const testSock = new WSocket(cs)
         const preTime = Date.now()
         testSock.onopen = () => {
           const delay = Date.now() - preTime
+          if (delay < minDelay) {
+            minDelay = delay
+          }
           if (config.dev) {
             console.log('延迟：', cs, delay)
           }
-          if (!timeout) {
-            if (delay < minDelay) {
-              minDelay = delay
-              minCs = cs
-            }
-            if (++idx === NODE_LIST.length) {
-              if (config.dev) {
-                console.log('选取延迟最低的节点：', minCs, minDelay)
-              }
-              resolve(minCs)
-            }
-          }
+          resolve(cs)
         }
+      }))
+    }
+
+    return new Promise(function (resolve, reject) {
+      setTimeout(function () {
+        reject('timeout')
+      }, 500)
+
+      Promise.race(promiseList).then(minCs => {
+        console.log('选取延迟最低的节点：', minCs, minDelay)
+        resolve(minCs)
       })
     })
   }
@@ -163,7 +161,7 @@ class Graphene {
     // }
     const transactions = obj[0]
     transactions.forEach(async transaction => {
-      console.log('$$$$$$ transaction callback:', transaction)
+      // console.log('$$$$$$ transaction callback:', transaction)
       if (transaction.seller) {
         let trxObj = {
           seller: transaction.seller,
@@ -243,16 +241,14 @@ class Graphene {
   }
 
   async queryAccountHistroy (accountid, limit) {
-    const result = Apis.instance().history_api().exec( "get_account_history", [accountid, '1.11.0', limit, '1.11.0']).then((x)=>{
-      console.log(JSON.stringify(x))
-    })
+    const result = await Apis.instance().history_api().exec( "get_account_history", [accountid, '1.11.0', limit, '1.11.0'])
     return result
   }
 
   async queryAccount (name) {
     const result = await Apis.instance().db_api().exec('get_account_by_name', [name])
     if (config.dev) {
-      // console.log('queryAccount', result)
+      console.log('queryAccount', result)
     }
     return result
   }
@@ -260,7 +256,7 @@ class Graphene {
   async queryWitness (id) {
     const result = await Apis.instance().db_api().exec('get_objects', [id])
     if (config.dev) {
-      // console.log('queryWitness', result)
+      console.log('queryWitness', result)
     }
     return result
   }
@@ -268,7 +264,7 @@ class Graphene {
   async execute (action, param) {
     const result = await Apis.instance().db_api().exec(action, param)
     if (config.dev) {
-      // console.log('query', action, result)
+      console.log('query', action, result)
     }
     // callback(result)
     return result
@@ -306,7 +302,7 @@ class Graphene {
     }
     return result
   }
-
+  
   async queryMarketHistory (base, quote, start, end, callback) {
     const startISO = start.toISOString().slice(0, -5)
     const endISO = end.toISOString().slice(0, -5)
@@ -324,6 +320,7 @@ class Graphene {
     }
   }
 
+  // 全局参数配置
   async queryGlobalProperties () {
     let globalParams
     try {
@@ -332,6 +329,22 @@ class Graphene {
       // console.log('queryGlobalProperties2', e)
     }
     return globalParams
+  }
+
+  async query24Volume () {
+    const volumeInfo = await Apis.instance().db_api().exec('get_24_volume', ['JADE.ETH', 'JADE.VEN'])
+    // {
+    //   "base": "JADE.ETH",
+    //   "quote": "JADE.VEN",
+    //   "base_volume": "103.17454100000004757",
+    //   "quote_volume": "16795.75688300004185294"
+    // }
+  }
+
+  async checkPeerConnection (WSocket) {
+    if (!self.isConnect) {
+      await self.start(WSocket)
+    }
   }
 }
 

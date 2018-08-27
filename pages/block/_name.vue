@@ -116,6 +116,7 @@ export default {
     }
   },
   async mounted () {
+    await graphene.checkPeerConnection(WebSocket)
     graphene.doQuery({
       type: 'block',
       string: this.blocknum,
